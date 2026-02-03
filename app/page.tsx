@@ -1,5 +1,7 @@
 "use client";
 
+// force redeploy
+
 import { useEffect, useState } from "react";
 import { supabase } from "../src/lib/supabaseClient";
 
