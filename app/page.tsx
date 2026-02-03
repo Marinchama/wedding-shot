@@ -33,19 +33,19 @@ export default function Home() {
 
     const { data: i } = await supabase.from("inventory").select("item,remaining");
 
-    if (i) {
-      const next: Inv = { habu: 0, tequila: 0 };
+if (i) {
+  const next: Inv = { habu: 0, tequila: 0 };
 
-      // Supabase からは string で返ってくるので、ガードしてから代入
-      for (const row of i as { item: string; remaining: number | null }[]) {
-        if (row.item === "habu" || row.item === "tequila") {
-          next[row.item] = row.remaining ?? 0;
-        }
-      }
-
-      setInv(next);
+  // Supabase からは string で返ってくるので、ガードしてから代入
+  for (const row of i as { item: string; remaining: number | null }[]) {
+    if (row.item === "habu" || row.item === "tequila") {
+      next[row.item] = row.remaining ?? 0;
     }
   }
+
+  setInv(next);
+}
+
 
   useEffect(() => {
     loadPublic();
