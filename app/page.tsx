@@ -5,9 +5,9 @@ import { supabase } from "../src/lib/supabaseClient";
 
 type Settings = { event_time: string; location: string; is_open: boolean };
 
+// ここがポイント：item を固定の union にする
 type Item = "habu" | "tequila";
 type Inv = Record<Item, number>;
-type InventoryRow = { item: Item; remaining: number };
 
 type Result = { ok: boolean; message: string; claim_code: string | null } | null;
 
@@ -23,24 +23,26 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   async function loadPublic() {
-    // ✅ id列が無くても動くように「先頭1件」を取得
     const { data: s } = await supabase
       .from("settings")
       .select("event_time,location,is_open")
-      .limit(1)
-      .maybeSingle();
+      .eq("id", 1)
+      .single();
 
     if (s) setSettings(s as Settings);
 
-    const { data: i } = await supabase
-      .from("inventory")
-      .select("item,remaining");
+    const { data: i } = await supabase.from("inventory").select("item,remaining");
 
     if (i) {
       const next: Inv = { habu: 0, tequila: 0 };
-      for (const row of i as InventoryRow[]) {
-        next[row.item] = row.remaining;
+
+      // Supabase からは string で返ってくるので、ガードしてから代入
+      for (const row of i as { item: string; remaining: number | null }[]) {
+        if (row.item === "habu" || row.item === "tequila") {
+          next[row.item] = row.remaining ?? 0;
+        }
       }
+
       setInv(next);
     }
   }
@@ -82,7 +84,9 @@ export default function Home() {
 
   return (
     <main style={{ maxWidth: 520, margin: "40px auto", padding: 16, fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 8 }}>Shot Reservation (First Come, First Served)</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 8 }}>
+        Shot Reservation (First Come, First Served)
+      </h1>
 
       <div style={{ padding: 12, border: "1px solid #ddd", borderRadius: 12 }}>
         <div>
@@ -96,7 +100,9 @@ export default function Home() {
         </div>
       </div>
 
-      <label style={{ display: "block", marginTop: 14, fontWeight: 700 }}>Name (nickname OK)</label>
+      <label style={{ display: "block", marginTop: 14, fontWeight: 700 }}>
+        Name (nickname OK)
+      </label>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
