@@ -7,7 +7,7 @@ import { supabase } from "../src/lib/supabaseClient";
 
 type Settings = { event_time: string; location: string; is_open: boolean };
 
-// ここがポイント：item を固定の union にする
+// item を固定の union にする
 type Item = "habu" | "tequila";
 type Inv = Record<Item, number>;
 
@@ -35,19 +35,16 @@ export default function Home() {
 
     const { data: i } = await supabase.from("inventory").select("item,remaining");
 
-if (i) {
-  const next: Inv = { habu: 0, tequila: 0 };
+    if (i) {
+      const next: Inv = { habu: 0, tequila: 0 };
 
-  // Supabase からは string で返ってくるので、ガードしてから代入
-  for (const row of i as { item: string; remaining: number | null }[]) {
-    if (row.item === "habu" || row.item === "tequila") {
-      next[row.item] = row.remaining ?? 0;
+      for (const row of i as { item: Item; remaining: number | null }[]) {
+        next[row.item] = row.remaining ?? 0;
+      }
+
+      setInv(next);
     }
-  }
-
-  setInv(next);
-}
-
+  } // ← ★これが抜けてた！（loadPublic を閉じる）
 
   useEffect(() => {
     loadPublic();
@@ -109,14 +106,26 @@ if (i) {
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="e.g., Lina"
-        style={{ width: "100%", padding: 10, fontSize: 16, borderRadius: 10, border: "1px solid #ccc" }}
+        style={{
+          width: "100%",
+          padding: 10,
+          fontSize: 16,
+          borderRadius: 10,
+          border: "1px solid #ccc",
+        }}
       />
 
       <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
         <button
           onClick={() => claim("habu")}
           disabled={loading || !settings.is_open || inv.habu <= 0}
-          style={{ padding: 12, fontSize: 16, borderRadius: 12, border: "1px solid #ccc", fontWeight: 700 }}
+          style={{
+            padding: 12,
+            fontSize: 16,
+            borderRadius: 12,
+            border: "1px solid #ccc",
+            fontWeight: 700,
+          }}
         >
           Reserve {habuLabel} (Remaining {inv.habu})
         </button>
@@ -124,7 +133,13 @@ if (i) {
         <button
           onClick={() => claim("tequila")}
           disabled={loading || !settings.is_open || inv.tequila <= 0}
-          style={{ padding: 12, fontSize: 16, borderRadius: 12, border: "1px solid #ccc", fontWeight: 700 }}
+          style={{
+            padding: 12,
+            fontSize: 16,
+            borderRadius: 12,
+            border: "1px solid #ccc",
+            fontWeight: 700,
+          }}
         >
           Reserve {tequilaLabel} (Remaining {inv.tequila})
         </button>
