@@ -223,7 +223,7 @@ export default function AdminPage() {
       </section>
 <button
   onClick={async () => {
-    const ok = confirm("本当にリセットしますか？\n・予約(Claims)が全削除され、コードが1からになります");
+    const ok = confirm("本当にリセットしますか？\n・予約(Reservation)が全削除され、コードが1からになります");
     if (!ok) return;
 
     const { error } = await supabase.rpc("admin_reset_claims");
@@ -244,12 +244,12 @@ export default function AdminPage() {
     fontWeight: 700,
   }}
 >
-  Reset claims (start from 1)
+  Reset reservations (start from 1)
 </button>
 
       <section style={{ marginTop: 16, padding: 12, border: "1px solid #ddd", borderRadius: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ fontSize: 16, marginBottom: 8 }}>Claims</h2>
+          <h2 style={{ fontSize: 16, marginBottom: 8 }}>Reservations</h2>
           <button onClick={refreshAll} style={{ padding: "8px 10px", borderRadius: 12, border: "1px solid #ccc" }}>
             Refresh
           </button>
@@ -286,7 +286,7 @@ export default function AdminPage() {
               {claims.length === 0 && (
                 <tr>
                   <td colSpan={5} style={{ padding: 10, color: "#777" }}>
-                    No claims yet.
+                    No reservations yet.
                   </td>
                 </tr>
               )}
