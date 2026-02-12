@@ -18,6 +18,7 @@ export default function AdminPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const [settings, setSettings] = useState<Settings>({ event_time: "19:00", location: "XXX", is_open: true });
   const [inventory, setInventory] = useState<{ habu: number; tequila: number }>({ habu: 0, tequila: 0 });
