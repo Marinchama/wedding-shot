@@ -221,6 +221,31 @@ export default function AdminPage() {
           Save inventory
         </button>
       </section>
+<button
+  onClick={async () => {
+    const ok = confirm("本当にリセットしますか？\n・予約(Claims)が全削除され、コードが1からになります");
+    if (!ok) return;
+
+    const { error } = await supabase.rpc("admin_reset_claims");
+    if (error) {
+      alert("Reset failed: " + error.message);
+      return;
+    }
+    alert("Reset done!");
+    // 必要なら一覧再取得
+    // await loadClaims();
+    // await loadPublic();
+  }}
+  style={{
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+    border: "1px solid #ccc",
+    fontWeight: 700,
+  }}
+>
+  Reset claims (start from 1)
+</button>
 
       <section style={{ marginTop: 16, padding: 12, border: "1px solid #ddd", borderRadius: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
