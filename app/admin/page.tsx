@@ -51,13 +51,20 @@ export default function AdminPage() {
     if (c) setClaims(c as ClaimRow[]);
   }
 
-  async function readSession() {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) setMsg(error.message);
-    const em = data.session?.user?.email ?? null;
-    setSessionEmail(em);
-    if (em) await refreshAll();
+async function resetReservations() {
+  setLoading(true);
+  try {
+    const { error } = await supabase.rpc("reset_reservations"); 
+    if (error) throw error;
+    
+    await loadReservations();
+
+    // setReservations([]);
+  } finally {
+    setLoading(false);
   }
+}
+
 
   useEffect(() => {
     readSession();
