@@ -197,7 +197,7 @@ export default function AdminPage() {
 
         <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr" }}>
           <div>
-            <label style={{ fontWeight: 700 }}>Habu Snake Liquor</label>
+            <label style={{ fontWeight: 700 }}>Habush</label>
             <input
               type="number"
               value={inventory.habu}
@@ -207,7 +207,7 @@ export default function AdminPage() {
           </div>
 
           <div>
-            <label style={{ fontWeight: 700 }}>White Tequila</label>
+            <label style={{ fontWeight: 700 }}>Don Julio Blanco</label>
             <input
               type="number"
               value={inventory.tequila}
