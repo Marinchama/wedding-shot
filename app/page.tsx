@@ -1,13 +1,11 @@
 "use client";
 
-// force redeploy
-
 import { useEffect, useState } from "react";
 import { supabase } from "../src/lib/supabaseClient";
 
 type Settings = { event_time: string; location: string; is_open: boolean };
 
-// item を固定の union にする
+// 予約対象を固定の union にする
 type Item = "habu" | "tequila";
 type Inv = Record<Item, number>;
 
@@ -38,13 +36,16 @@ export default function Home() {
     if (i) {
       const next: Inv = { habu: 0, tequila: 0 };
 
-      for (const row of i as { item: Item; remaining: number | null }[]) {
-        next[row.item] = row.remaining ?? 0;
+      // Supabase からは string で返ってくるので、ガードしてから代入
+      for (const row of i as { item: string; remaining: number | null }[]) {
+        if (row.item === "habu" || row.item === "tequila") {
+          next[row.item] = row.remaining ?? 0;
+        }
       }
 
       setInv(next);
     }
-  } // ← ★これが抜けてた！（loadPublic を閉じる）
+  }
 
   useEffect(() => {
     loadPublic();
@@ -78,8 +79,12 @@ export default function Home() {
     }
   }
 
-  const habuLabel = "Habu Snake Liquor";
-  const tequilaLabel = "White Tequila";
+  // 表示名（希望の文言）
+  const brideTitle = "Bride’s signature drink";
+  const brideDrinkName = "Habush";
+
+  const groomTitle = "Groom’s signature drink";
+  const groomDrinkName = "Don Julio Blanco";
 
   return (
     <main style={{ maxWidth: 520, margin: "40px auto", padding: 16, fontFamily: "system-ui" }}>
@@ -94,9 +99,7 @@ export default function Home() {
         <div>
           Location: <b>{settings.location}</b>
         </div>
-        <div style={{ marginTop: 6, color: "#555" }}>
-          Status: {settings.is_open ? "Open" : "Closed"}
-        </div>
+        <div style={{ marginTop: 6, color: "#555" }}>Status: {settings.is_open ? "Open" : "Closed"}</div>
       </div>
 
       <label style={{ display: "block", marginTop: 14, fontWeight: 700 }}>
@@ -106,20 +109,21 @@ export default function Home() {
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="e.g., Lina"
-        style={{
-          width: "100%",
-          padding: 10,
-          fontSize: 16,
-          borderRadius: 10,
-          border: "1px solid #ccc",
-        }}
+        style={{ width: "100%", padding: 10, fontSize: 16, borderRadius: 10, border: "1px solid #ccc" }}
       />
 
-      <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
+      {/* Bride */}
+      <div style={{ marginTop: 18, padding: 12, border: "1px solid #eee", borderRadius: 12 }}>
+        <div style={{ fontSize: 16, fontWeight: 800 }}>{brideTitle}</div>
+        <div style={{ fontSize: 20, fontWeight: 900, marginTop: 4 }}>{brideDrinkName}</div>
+        <div style={{ color: "#555", marginTop: 2 }}>{inv.habu} remaining</div>
+
         <button
           onClick={() => claim("habu")}
           disabled={loading || !settings.is_open || inv.habu <= 0}
           style={{
+            width: "100%",
+            marginTop: 10,
             padding: 12,
             fontSize: 16,
             borderRadius: 12,
@@ -127,13 +131,22 @@ export default function Home() {
             fontWeight: 700,
           }}
         >
-          Reserve {habuLabel} (Remaining {inv.habu})
+          Reserve {brideDrinkName}
         </button>
+      </div>
+
+      {/* Groom */}
+      <div style={{ marginTop: 12, padding: 12, border: "1px solid #eee", borderRadius: 12 }}>
+        <div style={{ fontSize: 16, fontWeight: 800 }}>{groomTitle}</div>
+        <div style={{ fontSize: 20, fontWeight: 900, marginTop: 4 }}>{groomDrinkName}</div>
+        <div style={{ color: "#555", marginTop: 2 }}>{inv.tequila} remaining</div>
 
         <button
           onClick={() => claim("tequila")}
           disabled={loading || !settings.is_open || inv.tequila <= 0}
           style={{
+            width: "100%",
+            marginTop: 10,
             padding: 12,
             fontSize: 16,
             borderRadius: 12,
@@ -141,7 +154,7 @@ export default function Home() {
             fontWeight: 700,
           }}
         >
-          Reserve {tequilaLabel} (Remaining {inv.tequila})
+          Reserve {groomDrinkName}
         </button>
       </div>
 
