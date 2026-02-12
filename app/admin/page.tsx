@@ -54,11 +54,13 @@ export default function AdminPage() {
 async function resetReservations() {
   setLoading(true);
   try {
-    const { error } = await supabase.rpc("reset_reservations"); 
+    const { error } = await supabase.rpc("reset_reservations"); // あなたの関数名に合わせて
     if (error) throw error;
-    
+
+    // ここがポイント：押した後に一覧を取り直す
     await loadReservations();
 
+    // さらに確実にするなら、画面上も一旦空にしておく（任意）
     // setReservations([]);
   } finally {
     setLoading(false);
