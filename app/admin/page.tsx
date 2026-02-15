@@ -20,10 +20,27 @@ export default function AdminPage() {
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [settings, setSettings] = useState<Settings>({ event_time: "19:00", location: "XXX", is_open: true });
-  const [inventory, setInventory] = useState<{ habu: number; tequila: number }>({ habu: 0, tequila: 0 });
+  const [settings, setSettings] = useState<Settings>({
+    event_time: "19:00",
+    location: "XXX",
+    is_open: true,
+  });
+  const [inventory, setInventory] = useState<{ habu: number; tequila: number }>({
+    habu: 0,
+    tequila: 0,
+  });
   const [claims, setClaims] = useState<ClaimRow[]>([]);
   const [msg, setMsg] = useState<string>("");
+
+  async function readSession() {
+    const { data } = await supabase.auth.getSession();
+    const userEmail = data.session?.user?.email ?? null;
+    setSessionEmail(userEmail);
+    // ログイン済みなら初回ロード
+    if (userEmail) {
+      await refreshAll();
+    }
+  }
 
   async function refreshAll() {
     setMsg("");
@@ -36,11 +53,13 @@ export default function AdminPage() {
     if (se) setMsg(se.message);
     if (s) setSettings(s as Settings);
 
-    const { data: inv, error: ie } = await supabase.from("inventory").select("item,remaining");
+    const { data: invRows, error: ie } = await supabase
+      .from("inventory")
+      .select("item,remaining");
     if (ie) setMsg(ie.message);
-    if (inv) {
+    if (invRows) {
       const next = { habu: 0, tequila: 0 };
-      for (const r of inv as InventoryRow[]) next[r.item] = r.remaining;
+      for (const r of invRows as InventoryRow[]) next[r.item] = r.remaining;
       setInventory(next);
     }
 
@@ -52,29 +71,13 @@ export default function AdminPage() {
     if (c) setClaims(c as ClaimRow[]);
   }
 
-async function resetReservations() {
-  setLoading(true);
-  try {
-    const { error } = await supabase.rpc("reset_reservations"); // あなたの関数名に合わせて
-    if (error) throw error;
-
-    // ここがポイント：押した後に一覧を取り直す
-    await loadReservations();
-
-    // さらに確実にするなら、画面上も一旦空にしておく（任意）
-    // setReservations([]);
-  } finally {
-    setLoading(false);
-  }
-}
-
-
   useEffect(() => {
     readSession();
     const { data: sub } = supabase.auth.onAuthStateChange(() => {
       readSession();
     });
     return () => sub.subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function signIn() {
@@ -87,6 +90,7 @@ async function resetReservations() {
     setMsg("");
     await supabase.auth.signOut();
     setSessionEmail(null);
+    setClaims([]);
   }
 
   async function saveSettings() {
@@ -99,11 +103,15 @@ async function resetReservations() {
 
   async function saveInventory() {
     setMsg("");
-    const { error: e1 } = await supabase.from("inventory").update({ remaining: inventory.habu }).eq("item", "habu");
+    const { error: e1 } = await supabase
+      .from("inventory")
+      .update({ remaining: inventory.habu })
+      .eq("item", "habu");
     const { error: e2 } = await supabase
       .from("inventory")
       .update({ remaining: inventory.tequila })
       .eq("item", "tequila");
+
     if (e1 || e2) setMsg((e1 ?? e2)!.message);
     else setMsg("Inventory saved.");
     await refreshAll();
@@ -114,6 +122,35 @@ async function resetReservations() {
     const { error } = await supabase.from("claims").update({ status }).eq("id", id);
     if (error) setMsg(error.message);
     await refreshAll();
+  }
+
+  async function resetReservations() {
+    const ok = confirm(
+      "本当にリセットしますか？\n・予約(Reservations)が全削除され、コードが1からになります"
+    );
+    if (!ok) return;
+
+    setLoading(true);
+    setMsg("");
+
+    // 体感を良くする：先に一覧を空にする（即反映）
+    setClaims([]);
+
+    try {
+      const { error } = await supabase.rpc("admin_reset_claims");
+      if (error) throw error;
+
+      // ここが重要：リセット後に再取得してUIを確定させる
+      await refreshAll();
+
+      alert("Reset done!");
+    } catch (e: any) {
+      setMsg(e?.message ?? "Reset failed.");
+      // 失敗時は取り直して元に戻す（保険）
+      await refreshAll();
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (!sessionEmail) {
@@ -138,12 +175,23 @@ async function resetReservations() {
 
         <button
           onClick={signIn}
-          style={{ marginTop: 12, padding: 12, width: "100%", fontSize: 16, borderRadius: 12, border: "1px solid #ccc" }}
+          style={{
+            marginTop: 12,
+            padding: 12,
+            width: "100%",
+            fontSize: 16,
+            borderRadius: 12,
+            border: "1px solid #ccc",
+          }}
         >
           Sign in
         </button>
 
-        {msg && <div style={{ marginTop: 12, padding: 12, border: "1px solid #ddd", borderRadius: 12 }}>⚠️ {msg}</div>}
+        {msg && (
+          <div style={{ marginTop: 12, padding: 12, border: "1px solid #ddd", borderRadius: 12 }}>
+            ⚠️ {msg}
+          </div>
+        )}
       </main>
     );
   }
@@ -154,13 +202,20 @@ async function resetReservations() {
         <h1 style={{ fontSize: 22 }}>Admin</h1>
         <div style={{ fontSize: 14, color: "#555" }}>
           Signed in as <b>{sessionEmail}</b>{" "}
-          <button onClick={signOut} style={{ marginLeft: 10, padding: "6px 10px", borderRadius: 10, border: "1px solid #ccc" }}>
+          <button
+            onClick={signOut}
+            style={{ marginLeft: 10, padding: "6px 10px", borderRadius: 10, border: "1px solid #ccc" }}
+          >
             Sign out
           </button>
         </div>
       </div>
 
-      {msg && <div style={{ marginTop: 12, padding: 12, border: "1px solid #ddd", borderRadius: 12 }}>⚠️ {msg}</div>}
+      {msg && (
+        <div style={{ marginTop: 12, padding: 12, border: "1px solid #ddd", borderRadius: 12 }}>
+          ⚠️ {msg}
+        </div>
+      )}
 
       <section style={{ marginTop: 16, padding: 12, border: "1px solid #ddd", borderRadius: 12 }}>
         <h2 style={{ fontSize: 16, marginBottom: 8 }}>Event Settings</h2>
@@ -197,7 +252,10 @@ async function resetReservations() {
           </div>
         </div>
 
-        <button onClick={saveSettings} style={{ marginTop: 12, padding: 10, borderRadius: 12, border: "1px solid #ccc", fontWeight: 700 }}>
+        <button
+          onClick={saveSettings}
+          style={{ marginTop: 12, padding: 10, borderRadius: 12, border: "1px solid #ccc", fontWeight: 700 }}
+        >
           Save settings
         </button>
       </section>
@@ -227,40 +285,37 @@ async function resetReservations() {
           </div>
         </div>
 
-        <button onClick={saveInventory} style={{ marginTop: 12, padding: 10, borderRadius: 12, border: "1px solid #ccc", fontWeight: 700 }}>
+        <button
+          onClick={saveInventory}
+          style={{ marginTop: 12, padding: 10, borderRadius: 12, border: "1px solid #ccc", fontWeight: 700 }}
+        >
           Save inventory
         </button>
       </section>
-<button
-  onClick={async () => {
-    const ok = confirm("本当にリセットしますか？\n・予約(Reservation)が全削除され、コードが1からになります");
-    if (!ok) return;
 
-    const { error } = await supabase.rpc("admin_reset_claims");
-    if (error) {
-      alert("Reset failed: " + error.message);
-      return;
-    }
-    alert("Reset done!");
-    // 必要なら一覧再取得
-    // await loadClaims();
-    // await loadPublic();
-  }}
-  style={{
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 12,
-    border: "1px solid #ccc",
-    fontWeight: 700,
-  }}
->
-  Reset reservations (start from 1)
-</button>
+      <button
+        onClick={resetReservations}
+        disabled={loading}
+        style={{
+          marginTop: 12,
+          padding: 12,
+          borderRadius: 12,
+          border: "1px solid #ccc",
+          fontWeight: 700,
+          opacity: loading ? 0.6 : 1,
+          cursor: loading ? "not-allowed" : "pointer",
+        }}
+      >
+        {loading ? "Resetting..." : "Reset reservations (start from 1)"}
+      </button>
 
       <section style={{ marginTop: 16, padding: 12, border: "1px solid #ddd", borderRadius: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ fontSize: 16, marginBottom: 8 }}>Reservations</h2>
-          <button onClick={refreshAll} style={{ padding: "8px 10px", borderRadius: 12, border: "1px solid #ccc" }}>
+          <button
+            onClick={refreshAll}
+            style={{ padding: "8px 10px", borderRadius: 12, border: "1px solid #ccc" }}
+          >
             Refresh
           </button>
         </div>
@@ -284,10 +339,16 @@ async function resetReservations() {
                   <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>{c.item}</td>
                   <td style={{ padding: 8, borderBottom: "1px solid #eee" }}>{c.status}</td>
                   <td style={{ padding: 8, borderBottom: "1px solid #eee", textAlign: "center" }}>
-                    <button onClick={() => setClaimStatus(c.id, "served")} style={{ padding: "6px 10px", borderRadius: 10, border: "1px solid #ccc" }}>
+                    <button
+                      onClick={() => setClaimStatus(c.id, "served")}
+                      style={{ padding: "6px 10px", borderRadius: 10, border: "1px solid #ccc" }}
+                    >
                       Mark served
                     </button>{" "}
-                    <button onClick={() => setClaimStatus(c.id, "void")} style={{ padding: "6px 10px", borderRadius: 10, border: "1px solid #ccc" }}>
+                    <button
+                      onClick={() => setClaimStatus(c.id, "void")}
+                      style={{ padding: "6px 10px", borderRadius: 10, border: "1px solid #ccc" }}
+                    >
                       Void
                     </button>
                   </td>
