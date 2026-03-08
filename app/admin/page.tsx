@@ -395,16 +395,9 @@ export default function AdminPage() {
       </button>
 
       <section style={{ marginTop: 16, padding: 12, border: "1px solid #ddd", borderRadius: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ fontSize: 16, marginBottom: 8 }}>Reservations</h2>
-          <button
-            onClick={refreshAll}
-            disabled={loading}
-            style={{ padding: "8px 10px", borderRadius: 12, border: "1px solid #ccc" }}
-          >
-            Refresh
-          </button>
-        </div>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+  <h2 style={{ fontSize: 16, marginBottom: 8 }}>Reservations</h2>
+</div>>
 
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
