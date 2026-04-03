@@ -84,7 +84,7 @@ export default function Home() {
   const brideDrinkName = "Habush";
 
   const groomTitle = "Groom’s signature drink";
-  const groomDrinkName = "Don Julio Blanco";
+  const groomDrinkName = "Don Julio";
 
   return (
     <main style={{ maxWidth: 520, margin: "40px auto", padding: 16, fontFamily: "system-ui" }}>
