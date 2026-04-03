@@ -347,7 +347,7 @@ export default function AdminPage() {
           </div>
 
           <div>
-            <label style={{ fontWeight: 700 }}>Don Julio Blanco</label>
+            <label style={{ fontWeight: 700 }}>Don Julio</label>
             <input
               type="number"
               value={inventory.tequila}
